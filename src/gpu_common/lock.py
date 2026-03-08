@@ -25,7 +25,7 @@ class GPULock:
         await self._redis.aclose()
 
     @asynccontextmanager
-    async def acquire(self, timeout: int = 3600, blocking_timeout: int = 300):
+    async def acquire(self, timeout: int = 1800, blocking_timeout: int = 300):
         """Acquire exclusive GPU access.
 
         Args:
