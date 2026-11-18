@@ -34,3 +34,24 @@ def free_gpu_memory() -> None:
     torch.cuda.synchronize()
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
+
+
+def is_gpu_oom(exc: BaseException | None) -> bool:
+    """True if a GPU out-of-memory error is anywhere in the exception chain.
+
+    Matches torch's OutOfMemoryError and the "out of memory" messages CTranslate2,
+    cuDNN, cuBLAS and ONNX Runtime raise as plain RuntimeErrors.
+    """
+    seen = set()
+    while exc is not None and id(exc) not in seen:
+        seen.add(id(exc))
+        text = str(exc).lower()
+        if (
+            type(exc).__name__ == "OutOfMemoryError"
+            or "out of memory" in text
+            or "cuda_error_out_of_memory" in text
+            or "failed to allocate memory" in text
+        ):
+            return True
+        exc = exc.__cause__ or exc.__context__
+    return False

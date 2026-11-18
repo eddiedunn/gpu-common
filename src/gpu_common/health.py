@@ -4,25 +4,26 @@ from gpu_common.memory import _torch
 
 
 def check_gpu_available() -> bool:
-    """Verify GPU is accessible and has memory.
+    """True if a CUDA GPU is visible to this process.
 
-    Returns:
-        True if GPU is available and functional, False otherwise
+    Deliberately does not allocate anything on the GPU: that would open a CUDA
+    context (hundreds of MB) in the calling process for as long as it lives, and
+    services call this from /health every few seconds.
     """
     torch = _torch()
-    if torch is None or not torch.cuda.is_available():
+    if torch is None:
         return False
     try:
-        test = torch.zeros(1, device='cuda')
-        del test
-        torch.cuda.empty_cache()
-        return True
-    except RuntimeError:
+        return bool(torch.cuda.is_available())
+    except Exception:
         return False
 
 
 def get_gpu_memory_info() -> dict:
-    """Get GPU memory usage information.
+    """Get GPU memory usage information for this process.
+
+    Opens a CUDA context: call it only from processes that already use the GPU
+    (e.g. inside a GPUWorker handler), never from a web server's /health.
 
     Returns:
         Dictionary with GPU memory statistics:
