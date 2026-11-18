@@ -1,6 +1,6 @@
 """GPU health check utilities."""
 
-import torch
+from gpu_common.memory import _torch
 
 
 def check_gpu_available() -> bool:
@@ -9,7 +9,8 @@ def check_gpu_available() -> bool:
     Returns:
         True if GPU is available and functional, False otherwise
     """
-    if not torch.cuda.is_available():
+    torch = _torch()
+    if torch is None or not torch.cuda.is_available():
         return False
     try:
         test = torch.zeros(1, device='cuda')
@@ -30,7 +31,8 @@ def get_gpu_memory_info() -> dict:
         - allocated_mb: Currently allocated memory in MB (if available)
         - cached_mb: Cached (reserved) memory in MB (if available)
     """
-    if not torch.cuda.is_available():
+    torch = _torch()
+    if torch is None or not torch.cuda.is_available():
         return {"available": False}
     return {
         "available": True,
